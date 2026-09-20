@@ -326,9 +326,16 @@ GenericCardLogon-RC-S380/
 - Apple Pay Expressと通常FeliCaを別経路として扱い、失敗時に安全にフォールバックする
 
 ## ライセンス
+このソフトウェアは MIT License のもとで公開されています。
 
-このリポジトリのライセンスは現時点では明示していません。公開する場合は、利用・改変・再配布条件を別途 `LICENSE` として明示してください。
+Copyright (c) 2026 GenericCardLogon contributors
 
+本ソフトウェアは「現状のまま（AS IS）」提供され、明示または黙示を問わず、
+商品性、特定目的への適合性、権利非侵害などの保証はありません。
+本ソフトウェアの使用によって生じた損害について、著作権者および貢献者は
+一切の責任を負いません。
+
+詳細については、リポジトリに含まれる LICENSE ファイルを参照してください。
 ## Disclaimer
 
 本ソフトウェアは現状のWindows、Sony NFC Port Software、RC-S380、FeliCaカード環境を対象とした実験・開発用ソフトウェアです。
