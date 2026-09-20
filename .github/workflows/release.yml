@@ -15,39 +15,58 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Restore .NET projects
+      # ★ ここが重要
+      # Build-GCL-Installer.ps1 と同じ MSBuild で
+      # Release|x64 用の NuGet restore を先に実行する
+      - name: Restore NuGet packages
         shell: pwsh
         run: |
-          dotnet restore src/GenericCardLogon.Core/GenericCardLogon.Core.csproj
-          dotnet restore src/GenericCardLogon.Service/GenericCardLogon.Service.csproj
-          dotnet restore src/GenericCardLogon.Manager/GenericCardLogon.Manager.csproj
+          msbuild .\GenericCardLogon-RC-S380.sln `
+            /t:Restore `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /m
 
-      - name: Build and package installer
+          if ($LASTEXITCODE -ne 0) {
+            throw "NuGet restore failed."
+          }
+
+      # ★ Restore 後に既存のインストーラービルドを実行
+      - name: Build installer
         shell: pwsh
         run: |
           .\Build-GCL-Installer.ps1
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Installer build failed."
+          }
 
       - name: Find installer
         id: installer
         shell: pwsh
         run: |
-          $installer = Get-ChildItem -Path . -Filter "GCL-Installer.exe" -Recurse -File |
+          $installer = Get-ChildItem `
+            -Path . `
+            -Filter "GCL-Installer.exe" `
+            -Recurse `
+            -File |
             Select-Object -First 1
 
           if (-not $installer) {
-            Write-Error "GCL-Installer.exe was not found."
-            exit 1
+            throw "GCL-Installer.exe was not found."
           }
 
-          Write-Host "Installer: $($installer.FullName)"
+          Write-Host "Found installer:"
+          Write-Host $installer.FullName
+
           "path=$($installer.FullName)" >> $env:GITHUB_OUTPUT
 
       - name: Calculate SHA-256
@@ -56,7 +75,9 @@ jobs:
         run: |
           $path = "${{ steps.installer.outputs.path }}"
           $hash = (Get-FileHash -Algorithm SHA256 $path).Hash
+
           Write-Host "SHA-256: $hash"
+
           "hash=$hash" >> $env:GITHUB_OUTPUT
 
       - name: Upload installer to Release
@@ -64,7 +85,7 @@ jobs:
         with:
           files: ${{ steps.installer.outputs.path }}
           body: |
-            ## GenericCardLogon Release
+            ## GenericCardLogon
 
             Windows x64 installer:
 
