@@ -1,14 +1,15 @@
-name: Release
+name: Build and Release Installer
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  build-release:
     runs-on: windows-2022
 
     steps:
@@ -17,80 +18,66 @@ jobs:
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          msbuild-architecture: x64
 
-      # ★ ここが重要
-      # Build-GCL-Installer.ps1 と同じ MSBuild で
-      # Release|x64 用の NuGet restore を先に実行する
-      - name: Restore NuGet packages
-        shell: pwsh
-        run: |
-          msbuild .\GenericCardLogon-RC-S380.sln `
-            /t:Restore `
-            /p:Configuration=Release `
-            /p:Platform=x64 `
-            /m
-
-          if ($LASTEXITCODE -ne 0) {
-            throw "NuGet restore failed."
-          }
-
-      # ★ Restore 後に既存のインストーラービルドを実行
-      - name: Build installer
+      - name: Build GCL Installer
         shell: pwsh
         run: |
           .\Build-GCL-Installer.ps1
 
-          if ($LASTEXITCODE -ne 0) {
-            throw "Installer build failed."
-          }
-
-      - name: Find installer
-        id: installer
+      - name: Verify installer
         shell: pwsh
         run: |
-          $installer = Get-ChildItem `
-            -Path . `
-            -Filter "GCL-Installer.exe" `
-            -Recurse `
-            -File |
-            Select-Object -First 1
+          $installer = Join-Path `
+            $env:GITHUB_WORKSPACE `
+            'src\GenericCardLogon.Installer\bin\x64\Release\net48\GCL-Installer.exe'
 
-          if (-not $installer) {
-            throw "GCL-Installer.exe was not found."
+          if (-not (Test-Path $installer)) {
+            throw "Installer was not produced: $installer"
           }
 
-          Write-Host "Found installer:"
-          Write-Host $installer.FullName
+          $size = (Get-Item $installer).Length
 
-          "path=$($installer.FullName)" >> $env:GITHUB_OUTPUT
+          if ($size -lt 100KB) {
+            throw "Installer is unexpectedly small: $size bytes"
+          }
 
-      - name: Calculate SHA-256
-        id: hash
+          Write-Host "Installer:"
+          Write-Host $installer
+          Write-Host "Size: $size bytes"
+
+          Get-FileHash $installer -Algorithm SHA256
+
+      - name: Package installer
         shell: pwsh
         run: |
-          $path = "${{ steps.installer.outputs.path }}"
-          $hash = (Get-FileHash -Algorithm SHA256 $path).Hash
+          $installer = Join-Path `
+            $env:GITHUB_WORKSPACE `
+            'src\GenericCardLogon.Installer\bin\x64\Release\net48\GCL-Installer.exe'
 
-          Write-Host "SHA-256: $hash"
+          $version = $env:GITHUB_REF_NAME
 
-          "hash=$hash" >> $env:GITHUB_OUTPUT
+          if (-not $version) {
+            $version = "dev-$env:GITHUB_RUN_NUMBER"
+          }
 
-      - name: Upload installer to Release
+          $package = Join-Path `
+            $env:GITHUB_WORKSPACE `
+            "GCL-Installer-$version.exe"
+
+          Copy-Item $installer $package -Force
+
+          "INSTALLER=$package" |
+            Out-File $env:GITHUB_ENV -Append
+
+          Get-FileHash $package -Algorithm SHA256
+
+      - name: Publish GitHub Release
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.installer.outputs.path }}
-          body: |
-            ## GenericCardLogon
-
-            Windows x64 installer:
-
-            `GCL-Installer.exe`
-
-            ### SHA-256
-
-            `${{ steps.hash.outputs.hash }}`
+          name: GenericCardLogon ${{ github.event.release.tag_name }}
+          generate_release_notes: true
+          files: ${{ env.INSTALLER }}
+          fail_on_unmatched_files: true
