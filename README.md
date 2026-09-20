@@ -1,7 +1,7 @@
 # GenericCardLogon
 
 <p align="center">
-  <img src="./design/genericcardlogon-logo.svg" alt="GenericCardLogon" width="128">
+  <img src="./GenericCardLogon.ico" alt="GenericCardLogon" width="128">
 </p>
 
 <p align="center">
