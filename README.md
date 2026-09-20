@@ -131,7 +131,7 @@ Installerには必要なGenericCardLogonのコンポーネントが含まれて�
 | タイル名 | `GenericCardLogon` |
 | 案内メッセージ | `ICカードをかざしてください` |
 
-LogonUI設定は `HKLM\SOFTWARE\GenericCardLogon` に保存されます。
+LogonUI設定は `HKLM\SOFTWARE\GenericCardLogon` に保存され、ManagerのLogonUI設定からLogonUI.exeにて表示される文言を変更することができます。いわゆるホワイトレーベルです(多分違う)。この設定は、Managerを管理者権限で起動しない限り、変更できません。
 
 ## ログオン処理
 
@@ -226,7 +226,7 @@ msbuild .\GenericCardLogon-RC-S380.sln /t:Restore /p:Configuration=Release /p:Pl
 
 ## 制限事項
 
-- Sony PaSoRi RC-S380を対象とします。
+- 開発者はこのソフトウェアを、Sony PaSoRi RC-S380を利用する想定で開発・動作確認をしています。おそらく他のPaSoRi系リーダライターでも操作すると思われます。
 - Windows 11 x64を対象とします。
 - Windowsローカルアカウントを対象とします。
 - Microsoftアカウント、Entra ID、ドメインアカウントへの対応は保証していません。
