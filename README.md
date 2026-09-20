@@ -1,4 +1,4 @@
-# GenericCardLogon RC-S380
+# GenericCardLogon PaSoRi用
 
 Windows 11 x64向けの、**Sony PaSoRi RC-S380 + FeliCaカードを利用したWindowsログオン用Credential Provider**です。
 
