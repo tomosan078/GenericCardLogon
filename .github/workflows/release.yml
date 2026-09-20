@@ -1,59 +1,75 @@
-name: Build and Release Installer
+name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
-  workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
   contents: write
 
 jobs:
-  build-release:
-    runs-on: windows-latest
+  build:
+    runs-on: windows-2022
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
       - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v3
-        with:
-          msbuild-architecture: x64
+        uses: microsoft/setup-msbuild@v2
 
-      - name: Build GCL Installer
-        shell: pwsh
-        run: .\Build-GCL-Installer.ps1
-
-      - name: Verify installer
+      - name: Restore .NET projects
         shell: pwsh
         run: |
-          $installer = Join-Path $env:GITHUB_WORKSPACE 'src\GenericCardLogon.Installer\bin\x64\Release\net48\GCL-Installer.exe'
-          if (-not (Test-Path $installer)) {
-            throw "Installer was not produced: $installer"
-          }
-          $size = (Get-Item $installer).Length
-          if ($size -lt 100KB) {
-            throw "Installer is unexpectedly small: $size bytes"
-          }
-          Get-FileHash $installer -Algorithm SHA256 | Format-List
+          dotnet restore src/GenericCardLogon.Core/GenericCardLogon.Core.csproj
+          dotnet restore src/GenericCardLogon.Service/GenericCardLogon.Service.csproj
+          dotnet restore src/GenericCardLogon.Manager/GenericCardLogon.Manager.csproj
 
-      - name: Package installer
+      - name: Build and package installer
         shell: pwsh
         run: |
-          $installer = Join-Path $env:GITHUB_WORKSPACE 'src\GenericCardLogon.Installer\bin\x64\Release\net48\GCL-Installer.exe'
-          $version = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "dev-$env:GITHUB_RUN_NUMBER" }
-          $package = Join-Path $env:GITHUB_WORKSPACE "GCL-Installer-$version.exe"
-          Copy-Item $installer $package -Force
-          "INSTALLER=$package" | Out-File $env:GITHUB_ENV -Append
-          Get-FileHash $package -Algorithm SHA256 | Format-List
+          .\Build-GCL-Installer.ps1
 
-      - name: Publish GitHub Release
-        if: github.ref_type == 'tag'
-        uses: softprops/action-gh-release@v3
+      - name: Find installer
+        id: installer
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem -Path . -Filter "GCL-Installer.exe" -Recurse -File |
+            Select-Object -First 1
+
+          if (-not $installer) {
+            Write-Error "GCL-Installer.exe was not found."
+            exit 1
+          }
+
+          Write-Host "Installer: $($installer.FullName)"
+          "path=$($installer.FullName)" >> $env:GITHUB_OUTPUT
+
+      - name: Calculate SHA-256
+        id: hash
+        shell: pwsh
+        run: |
+          $path = "${{ steps.installer.outputs.path }}"
+          $hash = (Get-FileHash -Algorithm SHA256 $path).Hash
+          Write-Host "SHA-256: $hash"
+          "hash=$hash" >> $env:GITHUB_OUTPUT
+
+      - name: Upload installer to Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: GenericCardLogon ${{ github.ref_name }}
-          generate_release_notes: true
-          files: ${{ env.INSTALLER }}
-          fail_on_unmatched_files: true
+          files: ${{ steps.installer.outputs.path }}
+          body: |
+            ## GenericCardLogon Release
+
+            Windows x64 installer:
+
+            `GCL-Installer.exe`
+
+            ### SHA-256
+
+            `${{ steps.hash.outputs.hash }}`
