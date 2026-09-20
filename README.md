@@ -233,4 +233,4 @@ msbuild .\GenericCardLogon-RC-S380.sln /t:Restore /p:Configuration=Release /p:Pl
 
 ライセンスはリポジトリの `LICENSE` ファイルを参照してください。
 
-Copyright (c) 2026 GenericCardLogon
+Copyright (c) 2026 Pronelt.
