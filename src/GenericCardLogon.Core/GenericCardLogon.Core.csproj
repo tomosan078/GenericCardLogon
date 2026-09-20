@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>GenericCardLogon.Core</RootNamespace>
+    <AssemblyName>GenericCardLogon.Core</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <OutputPath>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutputPath>
+    <BaseIntermediateOutputPath>$(SolutionDir)obj\$(Platform)\$(Configuration)\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+  </ItemGroup>
+</Project>

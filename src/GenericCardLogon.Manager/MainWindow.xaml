@@ -1,0 +1,361 @@
+<Window x:Class="GenericCardLogon.Manager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GenericCardLogon の設定"
+        Width="1100"
+        Height="760"
+        MinWidth="900"
+        MinHeight="620"
+        WindowStartupLocation="CenterScreen"
+        Background="#0F1115"
+        Foreground="#F4F6FA">
+
+    <Window.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#F4F6FA"/>
+        </Style>
+
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="#111419"/>
+            <Setter Property="BorderBrush" Value="#3D424C"/>
+            <Setter Property="Foreground" Value="#F4F6FA"/>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="#B8C0CC"/>
+            <Setter Property="Background" Value="#11151B"/>
+            <Setter Property="BorderBrush" Value="#303641"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="Margin" Value="0,0,2,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1,1,1,0"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#252A33"/>
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="#1688F5"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#1C222B"/>
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="GroupBox">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="Margin" Value="0,0,0,14"/>
+            <Setter Property="BorderBrush" Value="#454B56"/>
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="14,9"/>
+            <Setter Property="Margin" Value="4,0,0,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="#252A33"/>
+            <Setter Property="BorderBrush" Value="#3A4350"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#303846"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#4A5566"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#1688F5"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#1688F5"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="8,7"/>
+            <Setter Property="Background" Value="#1A1D23"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#4A505B"/>
+            <Setter Property="CaretBrush" Value="#FFFFFF"/>
+        </Style>
+
+        <Style TargetType="PasswordBox">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="8,7"/>
+            <Setter Property="Background" Value="#1A1D23"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#4A505B"/>
+        </Style>
+
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#181B21"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#3D424C"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#30343C"/>
+            <Setter Property="VerticalGridLinesBrush" Value="#30343C"/>
+            <Setter Property="RowBackground" Value="#181B21"/>
+            <Setter Property="AlternatingRowBackground" Value="#20242B"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#2B3039"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,7"/>
+            <Setter Property="BorderBrush" Value="#454B56"/>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="7,5"/>
+            <Setter Property="BorderBrush" Value="#30343C"/>
+        </Style>
+
+        <Style TargetType="ScrollViewer">
+            <Setter Property="Background" Value="#111419"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel Margin="8">
+        <!-- MynaLogon風ヘッダー -->
+        <Border DockPanel.Dock="Top" BorderBrush="#30343C" BorderThickness="0,0,0,1" Padding="10,4,10,12" Background="#0F1115">
+            <StackPanel>
+                <TextBlock Text="GenericCardLogon" FontSize="25" FontWeight="SemiBold"/>
+                <TextBlock Text="RC-S380 / FeliCa IDm を使った Windows ログオンの設定" FontSize="13" Foreground="#AAB1BD" Margin="0,3,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- MynaLogon風タブ -->
+        <TabControl Margin="0,8,0,8">
+            <TabItem Header="全体設定">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="#111419">
+                    <StackPanel Margin="14">
+                        <GroupBox Header="RC-S380 / リーダー状態">
+                            <Grid Margin="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="接続状態" FontWeight="Bold"/>
+                                <TextBlock x:Name="ReaderStatusText" Grid.Column="1" Text="確認中..."/>
+                                <TextBlock Grid.Row="1" Text="対象リーダー" FontWeight="Bold" Margin="0,10,0,0"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="Sony PaSoRi / RC-S380系" Margin="0,10,0,0"/>
+                                <TextBlock Grid.Row="2" Text="Apple Pay Express" FontWeight="Bold" Margin="0,10,0,0"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="Suica等はシステムコード 0x0003 を優先してPolling" Margin="0,10,0,0" Foreground="#D7DCE5" TextWrapping="Wrap"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="検出カード">
+                            <Grid Margin="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="カード状態" FontWeight="Bold"/>
+                                <TextBlock x:Name="CardStatusText" Grid.Column="1" Text="カードをかざしてください" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Row="1" Text="IDm SHA-256" FontWeight="Bold" Margin="0,10,0,0"/>
+                                <TextBox x:Name="CardHashTextBox" Grid.Row="1" Grid.Column="1" Margin="0,10,0,0" IsReadOnly="True" FontFamily="Consolas"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="データ管理">
+                            <StackPanel Margin="12">
+                                <TextBlock Text="登録情報は %ProgramData%\GenericCardLogon\cards.json に保存されます。" Foreground="#B8BFCA" TextWrapping="Wrap"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,12,0,0">
+                                    <Button Content="登録一覧を更新" Click="ReloadRegistrationsButton_Click"/>
+                                    <Button Content="JSONバックアップ" Click="BackupButton_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="カード登録">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="#111419">
+                    <StackPanel Margin="14">
+                        <GroupBox Header="登録済みカード">
+                            <Grid Margin="10" Height="300" MinHeight="220">
+                                <DataGrid x:Name="RegistrationGrid"
+                                          ItemsSource="{Binding Registrations}"
+                                          AutoGenerateColumns="False"
+                                          IsReadOnly="True"
+                                          SelectionMode="Single"
+                                          CanUserResizeRows="False"
+                                          CanUserSortColumns="True">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Windowsユーザー" Binding="{Binding UserName}" Width="1.15*"/>
+                                        <DataGridTextColumn Header="カード種別" Binding="{Binding CardType}" Width="0.7*"/>
+                                        <DataGridTextColumn Header="IDm Hash" Binding="{Binding IdmHash}" Width="2*"/>
+                                        <DataGridTextColumn Header="登録日時 (UTC)" Binding="{Binding RegisteredAtUtc}" Width="1.35*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="カード登録 / 削除">
+                            <Grid Margin="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Text="Windowsユーザー名" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBox x:Name="UserNameTextBox" Grid.Column="1" Margin="0,0,0,10" TextChanged="UserNameTextBox_TextChanged"/>
+                                <TextBlock Grid.Row="1" Text="Windowsパスワード" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <PasswordBox x:Name="PasswordBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10" PasswordChanged="PasswordBox_PasswordChanged"/>
+
+                                <TextBlock Grid.Row="2" Grid.ColumnSpan="2" x:Name="RegistrationHintText" Margin="0,4,0,10" TextWrapping="Wrap" Foreground="#B8BFCA"
+                                           Text="ユーザー名とWindowsパスワードを入力してから登録を開始します。カード未検出でも最大10秒待機します。"/>
+
+                                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
+                                    <Button x:Name="RegisterButton" Content="カードを登録" Width="150" IsEnabled="False" Click="RegisterButton_Click"/>
+                                    <Button x:Name="DeleteButton" Content="選択した登録を削除" Width="170" Click="DeleteButton_Click"/>
+                                </StackPanel>
+
+                                <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Margin="0,12,0,0" Text="登録時はWindowsパスワードを確認し、カードのIDmをSHA-256化して保存します。" Foreground="#8F98A6" TextWrapping="Wrap"/>
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="LogonUI設定">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="#111419">
+                    <StackPanel Margin="14">
+                        <GroupBox Header="LogonUI 表示設定">
+                            <Grid Margin="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="タイル名" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBox x:Name="ProviderLabelTextBox" Grid.Column="1" Margin="0,0,12,10"/>
+                                <TextBlock Grid.Row="1" Text="案内メッセージ" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBox x:Name="InstructionTextBox" Grid.Row="1" Grid.Column="1" Margin="0,0,12,10"/>
+                                <Button x:Name="SaveUiSettingsButton" Grid.Column="2" Grid.RowSpan="2" Content="設定を保存" Width="150" Click="SaveUiSettingsButton_Click"/>
+                                <TextBlock Grid.Row="2" Grid.ColumnSpan="3" Text="設定は HKLM\SOFTWARE\GenericCardLogon に保存され、次回LogonUI生成時から反映されます。" Foreground="#8F98A6" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                            </Grid>
+                        </GroupBox>
+
+                        <GroupBox Header="現在の標準設定">
+                            <StackPanel Margin="12">
+                                <TextBlock Text="タイル名: GenericCardLogon"/>
+                                <TextBlock Text="案内メッセージ: ICカードをかざしてください" Margin="0,8,0,0"/>
+                                <TextBlock Text="通常のWindowsパスワード / PIN Credential Providerは引き続き利用できます。" Foreground="#B8BFCA" Margin="0,14,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="バージョン情報">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Background="#111419">
+                    <StackPanel Margin="14">
+                        <GroupBox Header="GenericCardLogon" Height="744">
+                            <StackPanel Margin="18">
+                                <TextBlock Text="GenericCardLogon" FontSize="28" FontWeight="SemiBold"/>
+                                <TextBlock Text="RC-S380 / FeliCa IDm Windows Logon" Foreground="#AAB1BD" Margin="0,5,0,22"/>
+                                <TextBlock Text="制作者" FontWeight="Bold"/>
+                                <TextBlock Text="あげまごん。" Foreground="#D7DCE5" Margin="0,4,0,18"/>
+                                
+                                <TextBlock Text="バージョン" FontWeight="Bold"/>
+                                <TextBlock Text="9.5" Margin="0,4,0,18"/>
+
+                                <TextBlock Text="対応リーダー" FontWeight="Bold"/>
+                                <TextBlock Text="Sony PaSoRi RC-S380 / Sony FeliCa Port 系" Foreground="#D7DCE5" Margin="0,4,0,18" TextWrapping="Wrap"/>
+
+                                <TextBlock Text="カード方式" FontWeight="Bold"/>
+                                <TextBlock Text="FeliCa IDm / SHA-256（保存時はハッシュ化）" Foreground="#D7DCE5" Margin="0,4,0,18"/>
+
+                                <TextBlock Text="構成" FontWeight="Bold"/>
+                                <TextBlock Text="LocalSystem Service + restricted Named Pipe + Windows Credential Provider" Foreground="#D7DCE5" Margin="0,4,0,18" TextWrapping="Wrap"/>
+
+                                <TextBlock Text="ライセンス / OSS" FontWeight="Bold"/>
+                                <TextBlock Foreground="#B8BFCA" Margin="0,4,0,18" TextWrapping="Wrap" RenderTransformOrigin="0.5,0.5" Height="362">
+                                    <TextBlock.RenderTransform>
+                                        <TransformGroup>
+                                            <ScaleTransform/>
+                                            <SkewTransform AngleX="0.21"/>
+                                            <RotateTransform/>
+                                            <TranslateTransform X="0.496"/>
+                                        </TransformGroup>
+                                    </TextBlock.RenderTransform><Run Text="PCSC 7.0.1"/><LineBreak/><Run Text="Copyright (c) Daniel Mueller"/><LineBreak/><Run Text="License: BSD 2-Clause"/><LineBreak/><Run/><LineBreak/><Run Text="PCSC.Iso7816 7.0.1"/><LineBreak/><Run Text="Copyright (c) Daniel Mueller"/><LineBreak/><Run Text="License: BSD 2-Clause"/><LineBreak/><Run/><LineBreak/><Run Text="Microsoft.NETFramework.ReferenceAssemblies 1.0.3"/><LineBreak/><Run Text="Copyright (c) Microsoft Corporation and contributors"/><LineBreak/><Run Text="License: MIT"/><LineBreak/><Run/><LineBreak/><Run Text=".NET / .NET Framework"/><LineBreak/><Run Text="Copyright (c) Microsoft Corporation and contributors"/><LineBreak/><Run Text="License: Components are licensed under MIT, Apache-2.0,"/><LineBreak/><Run Text="and other applicable licenses."/><LineBreak/><Run/></TextBlock>
+
+                                <TextBlock Text="Copyright (c) 2026 AGEMAGON." Foreground="#8F98A6"/>
+                                <TextBlock Text="バージョン" FontWeight="Bold"/>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- MynaLogon風ステータスバー -->
+        <Border DockPanel.Dock="Bottom" Background="#171A20" BorderBrush="#30343C" BorderThickness="1" Padding="8,5">
+            <TextBlock x:Name="MessageText" Text="初期化中..." Foreground="#B8BFCA" TextWrapping="Wrap"/>
+        </Border>
+    </DockPanel>
+</Window>

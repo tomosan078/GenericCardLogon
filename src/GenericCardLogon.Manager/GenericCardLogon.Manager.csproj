@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>GenericCardLogon.Manager</RootNamespace>
+    <AssemblyName>GenericCardLogon.Manager</AssemblyName>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>GenericCardLogon.ico</ApplicationIcon>
+    <OutputPath>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutputPath>
+    <BaseIntermediateOutputPath>$(SolutionDir)obj\$(Platform)\$(Configuration)\</BaseIntermediateOutputPath>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GenericCardLogon.Core\GenericCardLogon.Core.csproj" />
+    <PackageReference Include="PCSC" Version="7.0.1" />
+    <PackageReference Include="PCSC.Iso7816" Version="7.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Security" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="GenericCardLogon.ico" />
+  </ItemGroup>
+</Project>

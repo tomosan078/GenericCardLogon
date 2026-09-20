@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" role="img" aria-labelledby="title desc">
+  <title id="title">GenericCardLogon</title>
+  <desc id="desc">FeliCa Card Authentication for Windows</desc>
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22c1f1"/><stop offset="55%" stop-color="#1688f5"/><stop offset="100%" stop-color="#3155d8"/>
+    </linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="58%" stop-color="#ffffff"/><stop offset="100%" stop-color="#18bdf2"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(42 55)">
+    <g transform="translate(138 0)" fill="#20bdf0">
+      <path d="M0 20 L47 13 L47 63 L0 63 Z"/><path d="M55 12 L105 5 L105 63 L55 63 Z"/>
+      <path d="M0 72 L47 72 L47 122 L0 115 Z"/><path d="M55 72 L105 72 L105 129 L55 122 Z"/>
+    </g>
+    <g transform="rotate(-16 78 160)">
+      <rect x="8" y="105" width="155" height="102" rx="18" fill="url(#card)"/>
+      <rect x="28" y="132" width="26" height="19" rx="5" fill="#fff"/>
+      <circle cx="128" cy="183" r="7" fill="#fff" opacity=".8"/>
+    </g>
+    <g fill="none" stroke="#20bdf0" stroke-width="11" stroke-linecap="round">
+      <path d="M170 143 Q218 188 170 233"/><path d="M193 125 Q260 188 193 251"/><path d="M217 107 Q302 188 217 269"/>
+    </g>
+  </g>
+
+  <text x="365" y="190" font-family="Segoe UI, Arial, sans-serif" font-size="76" font-weight="700" letter-spacing="-2" fill="url(#word)">
+    Generic<tspan fill="#20bdf0">CardLogon</tspan>
+  </text>
+  <text x="370" y="245" font-family="Segoe UI, Arial, sans-serif" font-size="27" letter-spacing="2" fill="#aeb9c8">
+    FELICA CARD AUTHENTICATION FOR WINDOWS
+  </text>
+  <rect x="370" y="275" width="610" height="3" rx="1.5" fill="#1688f5" opacity=".75"/>
+</svg>
