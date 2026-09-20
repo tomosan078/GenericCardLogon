@@ -1,365 +1,236 @@
-# GenericCardLogon PaSoRi用
+# GenericCardLogon
 
-Windows 11 x64向けの、**Sony PaSoRi RC-S380 + FeliCaカードを利用したWindowsログオン用Credential Provider**です。
+<p align="center">
+  <img src="./design/genericcardlogon-logo.svg" alt="GenericCardLogon" width="128">
+</p>
 
-> **Status: Experimental / Personal project**
->
-> 実機（RC-S380、Suica、Apple Pay / Express Suica、通常FeliCa）での動作確認を行っている開発版です。Windowsのログオン機構に関係するため、導入前に必ず通常のパスワード/PINによるログオン手段と復旧手段を確保してください。
+<p align="center">
+  Sony PaSoRi RC-S380 と FeliCa カードを使って Windows 11 にログオン／ロック解除する Credential Provider
+</p>
 
-## 概要
+<p align="center">
+  <img src="https://img.shields.io/badge/Windows-11%20x64-237AEB" alt="Windows 11 x64">
+  <img src="https://img.shields.io/badge/Reader-RC--S380-7086BD" alt="Sony PaSoRi RC-S380">
+  <img src="https://img.shields.io/badge/FeliCa-IDm-28B84A" alt="FeliCa IDm">
+</p>
 
-GenericCardLogonは、FeliCaのIDmをカード識別子として利用し、登録済みのWindowsアカウントに対応するパスワードを取得して、Windows標準のCredential Provider経由でログオンする構成です。
+GenericCardLogon は、Sony PaSoRi RC-S380 で FeliCa の IDm を検出し、登録済みのカードを認証情報として Windows 11 のローカルアカウントへログオン／ロック解除する Credential Provider です。
 
-```text
-┌──────────────┐
-│ RC-S380      │
-│ PaSoRi       │
-└──────┬───────┘
-       │ FeliCa Polling
-       ▼
-┌──────────────────────┐
-│ GenericCardLogon     │
-│ Service (LocalSystem)│
-└──────────┬───────────┘
-           │ Restricted Named Pipe
-           ▼
-┌────────────────────────────┐
-│ GenericCardLogon           │
-│ Credential Provider (x64)  │
-└────────────┬───────────────┘
-             │ Standard Windows credential serialization
-             ▼
-┌────────────────────────────┐
-│ Windows LogonUI            │
-└────────────────────────────┘
-```
+認証処理は Windows Credential Provider、LocalSystem サービス、限定された Named Pipe、Sony FeliCa Library を組み合わせて構成しています。Windows 標準のパスワード／PIN Credential Provider は無効化しません。
 
-通常のWindows Password / PIN Credential Providerは置き換えず、共存させます。
+> [!IMPORTANT]
+> Credential Provider と Windows サービスをシステムへ登録します。インストール前に、標準の Windows パスワードまたは PIN でログオンできることと、別のローカル管理者アカウントを利用できることを確認してください。
 
-## 現在の仕様
+## 主な機能
 
-- OS: Windows 11 x64
-- Reader: Sony PaSoRi RC-S380
-- FeliCa IDm: 8 bytes / 16 hexadecimal characters
-- IDmは平文保存せず、`SHA-256("FeliCa:" + IDm)` を64文字hexで保存
-- 登録DB: `%ProgramData%\GenericCardLogon\cards.json`
-- Service: LocalSystem / 自動起動
-- IPC: `GenericCardLogon.Logon.v1` Named Pipe
-- Credential Provider: x64 / V2
-- 保存パスワード: Windows DPAPI `LocalMachine` スコープで保護
-- WebAuthn / FIDO2: **現在の版には含まれません**
-- LSA Authentication Package: **追加・変更しません**
+- Sony PaSoRi RC-S380 による FeliCa 検出
+- FeliCa IDm によるカード登録・認証
+- Suica、通常の FeliCa、Apple Pay Express Suica の検出
+- FeliCa IDm の SHA-256 ハッシュによる登録情報管理
+- Windows ローカルアカウントへのログオン／ロック解除
+- LocalSystem サービスによるカード検出と認証処理
+- Named Pipe による Credential Provider とサービス間通信
+- Windows 標準パスワード／PIN Credential Provider との共存
+- 管理画面からのカード登録・削除
+- LogonUI のタイル名・案内メッセージ設定
+- インストール、修復、アンインストールに対応したGUI Installer
+- デスクトップ／スタートメニューへの管理画面ショートカット
 
-## 対応カード経路
-
-### 通常のFeliCa / Suica
-
-Sony FeliCa Libraryを優先してFeliCa Pollingを行います。
-
-- 通常の物理FeliCaは `0xFFFF` をフォールバックとして使用
-- Suica系は `0x0003` を優先
-- FeliCa Libraryが利用できない場合は、既存のPC/SC経路にフォールバックする構成があります
-
-### Apple Pay / Express Suica
-
-Apple PayのExpressカードは通常のPC/SC `Get UID` だけでは期待する8-byte FeliCa IDmを取得できない場合があります。そのため本版ではSony FeliCa Libraryを使用したPolling経路を追加しています。
-
-Express用Pollingは `0x0003` を対象とし、FeliCaのTime Slotを変えながら試行します。
-
-現在の順序は概ね以下です。
-
-```text
-0x0003 / TimeSlot 0x00
-        ↓
-短い待機
-        ↓
-0x0003 / TimeSlot 0x00
-        ↓
-0x0003 / TimeSlot 0x01
-        ↓
-0x0003 / TimeSlot 0x03
-```
-
-Service側ではExpress検出を複数回の独立したRFサイクルとして再試行します。
-
-**IDmを取得した時点で、そのAUTH要求について追加Pollingを行わず処理を次へ進めます。** これはApple Watch / Expressカード検出後もReaderへのPollingを継続してしまう状態を避けるための現在版の挙動です。
-
-> Apple Pay / Express ModeそのものはApple Wallet側の機能です。WindowsアプリからExpress設定を変更するものではありません。
-
-## カード登録
-
-Managerから以下の流れで登録します。
-
-1. Windowsユーザー名を入力
-2. 現在のWindowsパスワードを入力
-3. RC-S380にカードをかざす
-4. FeliCa IDmを取得
-5. `SHA-256("FeliCa:" + IDm)` を生成
-6. WindowsパスワードをDPAPIで保護
-7. `cards.json` にユーザーとの対応を保存
-
-IDmそのものは登録DBには保存しません。
-
-## ログオン処理
-
-Credential ProviderでGenericCardLogonを選択すると、カード検出WorkerがServiceへ認証要求を送ります。
-
-Serviceは次の処理を行います。
-
-```text
-AUTH要求
-  ↓
-RC-S380 / FeliCa Polling
-  ↓
-8-byte IDm
-  ↓
-SHA-256("FeliCa:" + IDm)
-  ↓
-cards.json照合
-  ↓
-DPAPI復号
-  ↓
-ユーザー名 + パスワード
-  ↓
-Credential Provider
-  ↓
-Windows標準の資格情報serialization
-```
-
-Credential Provider側では、カード認証のためのReader待機をLogonUIのUIスレッドで直接行わないようにしています。カード検出はバックグラウンドWorkerで行い、通常のPassword/PIN Providerを利用できる状態を維持します。
-
-## セキュリティ上の注意
-
-### LSA Authentication Packageを使用しない
-
-本プロジェクトでは、WindowsのLSA `Authentication Packages` を変更しません。
-
-過去の実験版とは異なり、独自のLSA Authentication Packageを登録する方式は採用していません。
-
-### IDmについて
-
-FeliCa IDmは秘密鍵ではありません。IDm自体をパスワードや秘密情報として扱う設計にはしていません。
-
-登録DBには以下だけを保存します。
-
-```text
-SHA-256("FeliCa:" + IDm)
-```
-
-### Windowsパスワードについて
-
-登録時に入力されたWindowsパスワードはDPAPI `DataProtectionScope.LocalMachine` で保護して保存されます。
-
-そのため、`cards.json` は公開してよいファイルではありません。バックアップする場合も安全な場所に保管してください。
-
-### Named Pipe
-
-ServiceはLocalSystemで動作し、Named PipeにはLocalSystemとAdministratorsを対象としたACLを設定しています。
-
-また、Service側ではNamed Pipeのクライアントプロセスを確認し、想定外のIPCクライアントからの認証要求を拒否します。
-
-## ビルド環境
-
-### 必要なもの
+## 動作環境
 
 - Windows 11 x64
-- Visual Studio 2022
-- .NET Framework 4.8 Developer Pack
-- C++ Desktop Development
-- Windows SDK
-- x64 build tools
-- Sony NFC Port Software / FeliCa Library
+- Sony PaSoRi RC-S380
+- Sony FeliCa Library
+- Windows ローカルアカウント
+- .NET Framework 4.8
+- Visual Studio 2022 / MSVC C++17（ビルド時）
+- Windows 11 SDK（Credential Provider ビルド時）
 
-Credential ProviderはC++、Manager / Service / Coreは.NET Framework 4.8系です。
+RC-S380以外のカードリーダーについては動作を保証していません。
 
-## ビルド
+WebAuthn、Passkey、FIDO2認証器としてのブラウザ認証は現在の仕様には含まれていません。Windows LSA Authentication Package は使用しません。
 
-1. `GenericCardLogon-RC-S380.sln` をVisual Studioで開く
-2. 構成を `Release`
-3. プラットフォームを `x64`
-4. `Build > Build Solution`
+## 認証と保護
 
-主要プロジェクト:
+管理画面では Windows ユーザー名、現在の Windows パスワード、登録するFeliCaカードを指定します。
+
+FeliCa IDmそのものは登録データとして保存せず、次の値をSHA-256でハッシュ化した64文字の16進数を使用します。
 
 ```text
-src/
-├─ GenericCardLogon.Core/
-├─ GenericCardLogon.Manager/
-├─ GenericCardLogon.Service/
-├─ GenericCardLogon.CredentialProvider/
-└─ GenericCardLogon.Installer/
+SHA-256("FeliCa:" + IDm)
 ```
+
+Windows パスワードは LocalMachine スコープの DPAPI により暗号化して保存します。
+
+カード認証時は、選択されたWindowsユーザーと登録済みカードの組み合わせを確認し、サービスからCredential Providerへ認証情報を渡します。
+
+標準のWindowsパスワード／PIN Credential Providerは無効化しません。FeliCaが利用できない場合でも、通常のWindowsログオン手段を使用できます。
+
+## カード検出
+
+RC-S380からFeliCaのPollingを行い、まずシステムコード `0x0003` を使用します。
+
+`0x0003` は通常のFeliCaだけでなく、Apple Pay Express Suicaの検出にも使用します。
+
+通常のFeliCaについては必要に応じて `0xFFFF` をフォールバックとして使用します。
+
+Express SuicaのIDmを検出できた場合は、それ以上のPollingを継続せず、カード検出処理を終了します。これにより不要な連続Pollingを避けます。
+
+カード登録時には検出の安定性を確保するため、複数回のPolling結果を使用してカードの存在を確認します。
 
 ## インストール
 
-管理者権限のPowerShellから、ビルド後に以下を実行できます。
+GitHub Releases から `GCL-Installer.exe` をダウンロードして起動します。
 
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\scripts\Install-All.ps1
-```
+Installerには必要なGenericCardLogonのコンポーネントが含まれており、GUIからインストール、修復、アンインストールを実行できます。
 
-このスクリプトはServiceの登録・起動とCredential Provider DLLのSystem32への配置・登録を行います。
+インストール後の主な配置先は次のとおりです。
 
-個別に実行する場合:
+| コンポーネント | 配置先 |
+| --- | --- |
+| Service、Core、Manager | `%ProgramFiles%\GenericCardLogon` |
+| Credential Provider | `%SystemRoot%\System32` |
+| 登録データ | `%ProgramData%\GenericCardLogon` |
+| カード登録データ | `%ProgramData%\GenericCardLogon\cards.json` |
 
-```powershell
-.\scripts\Install-Service.ps1
-.\scripts\Install-CredentialProvider.ps1
-```
+インストール後、スタートメニューまたはデスクトップの `GenericCardLogon Manager` を起動して初期設定を行います。
 
-### Installer
+## 初期設定
 
-`GenericCardLogon.Installer` にはWPFベースのインストーラーも含まれています。
+1. `GenericCardLogon Manager` を管理者として起動します。
+2. 「全体設定」でRC-S380の状態を確認します。
+3. 「カード登録」を開きます。
+4. Windowsユーザー名と現在のWindowsパスワードを入力します。
+5. RC-S380へFeliCaカードをかざします。
+6. 検出されたカードを登録します。
+7. 必要に応じて「LogonUI設定」で表示名と案内メッセージを変更します。
+8. Windowsをロックして、カードによるログオンを確認します。
 
-インストーラーは、Service、Credential Provider、LogonUI設定、ショートカット等をまとめて扱う構成です。
+標準のWindowsパスワード／PINログオンも引き続き使用できます。
 
-## アンインストール / 復旧
+## 管理画面
 
-```powershell
-.\scripts\Uninstall-All.ps1
-```
+| タブ | 内容 |
+| --- | --- |
+| 全体設定 | Reader状態、カード検出、基本設定 |
+| カード登録 | WindowsアカウントへのFeliCa登録・削除 |
+| LogonUI設定 | タイル名、案内メッセージ |
+| バージョン情報 | バージョン、プロジェクト情報 |
 
-Credential Providerだけを解除する場合:
+初期値は次のとおりです。
 
-```powershell
-.\scripts\Uninstall-CredentialProvider.ps1
-```
+| 設定 | 初期値 |
+| --- | --- |
+| タイル名 | `GenericCardLogon` |
+| 案内メッセージ | `ICカードをかざしてください` |
 
-Serviceだけを解除する場合:
+LogonUI設定は `HKLM\SOFTWARE\GenericCardLogon` に保存されます。
 
-```powershell
-.\scripts\Uninstall-Service.ps1
-```
+## ログオン処理
 
-**Windowsログオン画面で問題が発生した場合でも、通常のPassword/PINログオンを残しておくことを強く推奨します。**
+Windows LogonUIでGenericCardLogonを選択すると、Credential ProviderがLocalSystemサービスへカード検出を要求します。
 
-## 設定
-
-LogonUI表示文字列は以下のレジストリを使用します。
-
-```text
-HKLM\SOFTWARE\GenericCardLogon
-```
-
-主な設定:
-
-```text
-ProviderLabel
-Instruction
-```
-
-既定値:
+処理の流れは次のとおりです。
 
 ```text
-ProviderLabel = GenericCardLogon
-Instruction  = ICカードをかざしてください
+RC-S380
+   ↓
+Sony FeliCa Library
+   ↓
+GenericCardLogon Service
+   ↓
+限定Named Pipe
+   ↓
+Credential Provider
+   ↓
+Windows標準Credential Serialization
+   ↓
+Windows LogonUI
 ```
 
-Managerから変更できます。
+カードのIDmはサービス側でハッシュ化して登録情報と照合します。
 
-## ログ / トラブルシューティング
+登録済みカードとして認証できた場合のみ、DPAPIで保護されたWindowsパスワードを使用して標準のWindows Credential Serializationを生成します。
 
-### Credential Providerの登録確認
+LSA Authentication Packageを追加・変更する方式ではありません。
 
-```powershell
-.\scripts\Check-CredentialProvider.ps1
-```
+## セキュリティ
 
-### インストール状態確認
+- FeliCa IDmの生値を登録DBへ保存しません。
+- 登録値には `SHA-256("FeliCa:" + IDm)` を使用します。
+- WindowsパスワードはDPAPI LocalMachineで保護します。
+- Credential Providerとサービス間通信には限定されたNamed Pipeを使用します。
+- FeliCa IDm自体を秘密鍵として扱いません。
+- Windows標準パスワード／PIN Credential Providerを無効化しません。
+- LSA `Authentication Packages` を変更しません。
 
-```powershell
-.\scripts\Check-Installation.ps1
-```
+FeliCa IDmはカードを識別するための値であり、秘密情報ではありません。そのため、IDmだけを暗号鍵やパスワードの代わりとして使用する設計にはしていません。
 
-### RC-S380が検出されない
+## アンインストールと復旧
 
-1. Sony NFC Port Softwareがインストールされているか確認
-2. RC-S380をUSBから抜き差し
-3. Windowsのデバイス認識を確認
-4. Sony FeliCa Libraryの `felica.dll` が存在するか確認
-5. Managerを再起動
+Installerの「アンインストール」からGenericCardLogonを削除できます。
 
-通常のFeliCaとApple Pay ExpressではRF応答特性が異なるため、同じ条件でも検出率が異なる場合があります。
+通常のアンインストールでは、`%ProgramData%\GenericCardLogon` に保存された登録データを意図せず削除しないようにしています。
 
-## Apple Watchについて
-
-Apple WatchのExpress Suicaでは、カード検出時にApple Watch側の画面遷移が発生します。本版ではExpress IDm取得成功後にそのAUTH要求のPollingを継続しないようにしています。
-
-ただし、**Apple Watchの表示上の現象をこのアプリが原因と断定するものではありません**。Reader、Watch、周辺環境の影響も考えられるため、問題がある場合はGCLを停止した状態でも比較してください。
-
-## 制限事項
-
-- RC-S380以外のReaderは正式な対象としていません
-- FeliCa IDmを秘密鍵として利用するものではありません
-- WebAuthn / FIDO2 / Passkey Providerではありません
-- Windows Hello PIN UIを置き換えるものではありません
-- LSA Authentication Packageは使用しません
-- Apple Pay / Express ModeのWindows側設定を変更するものではありません
-- Readerやカード、OS、Sony NFC Port Softwareの組み合わせによって検出結果が変わる可能性があります
-
-## ディレクトリ構成
+再インストール前に登録情報を完全に削除したい場合は、アンインストール後に次のフォルダーを確認してください。
 
 ```text
-GenericCardLogon-RC-S380/
-├─ src/
-│  ├─ GenericCardLogon.Core/
-│  ├─ GenericCardLogon.Manager/
-│  ├─ GenericCardLogon.Service/
-│  ├─ GenericCardLogon.CredentialProvider/
-│  └─ GenericCardLogon.Installer/
-├─ scripts/
-├─ README.md
-├─ README-v9.5.md
-├─ APPLE_PAY_EXPRESS_NOTES.md
-└─ GenericCardLogon-RC-S380.sln
+%ProgramData%\GenericCardLogon
 ```
 
-## 開発方針
+ログオン画面に問題が発生した場合でも、Windows標準のパスワード／PIN Credential Providerを使用して復旧できる構成を維持することを推奨します。
 
-- Windows標準のPassword/PINログオンを壊さない
-- LSA Authentication Packageを変更しない
-- ReaderアクセスをServiceに分離する
-- Credential ProviderのUIスレッドをブロックしない
-- IDmを平文保存しない
-- 未公開Sony APIや未検証のReaderコマンドを不用意に追加しない
-- Apple Pay Expressと通常FeliCaを別経路として扱い、失敗時に安全にフォールバックする
+## ビルド
 
-## ライセンス
-このソフトウェアは [MIT License](LICENSE) のもとで公開されています。
-## Disclaimer
+Visual Studio 2022、Windows 11 SDK、.NET Framework 4.8開発環境が必要です。
 
-本ソフトウェアは現状のWindows、Sony NFC Port Software、RC-S380、FeliCaカード環境を対象とした実験・開発用ソフトウェアです。
-
-Windowsログオンに関わるため、実機導入前にバックアップと復旧手段を確保してください。作者は、設定変更・Credential Provider登録・カード登録・Windows更新・Reader/カード相性などによって発生したログオン不能、データ損失、その他の損害について保証しません。
-
-## GitHub Actions / Release
-
-GitHub Actions can build the complete x64 installer automatically and attach it to a GitHub Release.
-
-A release is created when a semantic-version tag such as `v9.5.0` is pushed:
+リポジトリ直下からVisual Studio Developer PowerShellまたはDeveloper Command Promptを使用してビルドします。
 
 ```powershell
-git tag v9.5.0
-git push origin v9.5.0
+msbuild .\GenericCardLogon-RC-S380.sln /p:Configuration=Release /p:Platform=x64
 ```
 
-The workflow is located at `.github/workflows/release.yml` and builds `GCL-Installer.exe` with MSBuild on a Windows GitHub-hosted runner. The resulting installer is uploaded to the release as `GCL-Installer-v9.5.0.exe`.
-
-The workflow also prints and verifies a SHA-256 hash for the generated installer.
-
-### Manual build
-
-The same installer can be built locally with:
+Installerを作成する場合は、
 
 ```powershell
 .\Build-GCL-Installer.ps1
 ```
 
-Output:
+を実行します。
 
-```text
-src\GenericCardLogon.Installer\bin\x64\Release\net48\GCL-Installer.exe
+C#プロジェクトをビルドする前にNuGet restoreが必要な環境では、次のようにrestoreします。
+
+```powershell
+msbuild .\GenericCardLogon-RC-S380.sln /t:Restore /p:Configuration=Release /p:Platform=x64
 ```
 
-The release workflow intentionally builds the main GenericCardLogon solution first and the installer second because the installer embeds the Service, Manager, Core, PC/SC and Credential Provider binaries.
+ビルド成果物にはCore、Service、Manager、Credential Providerなどが含まれます。
+
+## プロジェクト構成
+
+| プロジェクト | 役割 |
+| --- | --- |
+| `GenericCardLogon.Core` | 共通処理、カード情報、認証関連ロジック |
+| `GenericCardLogon.Service` | LocalSystemサービス、RC-S380検出、認証処理 |
+| `GenericCardLogon.Manager` | カード登録、設定、管理画面 |
+| `GenericCardLogon.CredentialProvider` | Windows Credential Provider |
+| `GenericCardLogon.Installer` | GUI Installer |
+| `GenericCardLogon.WebAuthn` | 現在のリリースでは使用しない実験・基盤コード |
+
+## 制限事項
+
+- Sony PaSoRi RC-S380を対象とします。
+- Windows 11 x64を対象とします。
+- Windowsローカルアカウントを対象とします。
+- Microsoftアカウント、Entra ID、ドメインアカウントへの対応は保証していません。
+- WebAuthn / Passkey / FIDO2によるブラウザ認証は現在の仕様に含まれません。
+- LSA Authentication Packageは使用しません。
+- FeliCa IDmだけで暗号学的な秘密鍵認証を行う設計ではありません。
+- RC-S380以外のReaderでの動作は保証していません。
+- カード、Reader、Windows、Sony FeliCa Libraryの組み合わせによって検出結果が変わる場合があります。
+
+## License
+
+ライセンスはリポジトリの `LICENSE` ファイルを参照してください。
+
+Copyright (c) 2026 GenericCardLogon
